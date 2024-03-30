@@ -18,8 +18,9 @@
  * \frac{c(0)}{120}t^5+\frac{c(1)}{24}t^4+\frac{c(2)}{6}t^3+\frac{c(3)}{2}t^2+c(4)t+c(5)
  * = 0\f$
  */
-class Primitive1D {
- public:
+class Primitive1D
+{
+public:
   /************************* Constructors *************************/
   /// Empty constructor
   Primitive1D() {}
@@ -28,7 +29,7 @@ class Primitive1D {
    * @brief Construct from known coefficients
    * @param coeff[0] is the coefficient of the highest order
    */
-  Primitive1D(const Vec6f& coeff) : c(coeff) {}
+  Primitive1D(const Vec6f &coeff) : c(coeff) {}
 
   /// Construct 1D primitive from an initial state (p) and an input control (u)
   Primitive1D(decimal_t p, decimal_t u) { c << 0, 0, 0, 0, u, p; }
@@ -39,26 +40,30 @@ class Primitive1D {
 
   /// Construct 1D primitive from an initial state (p, v, a) and an input
   /// control (u)
-  Primitive1D(Vec3f state, decimal_t u) {
+  Primitive1D(Vec3f state, decimal_t u)
+  {
     c << 0, 0, u, state(2), state(1), state(0);
   }
 
   /// Construct 1D primitive from an initial state (p, v, a, j) and an input
   /// control (u)
-  Primitive1D(Vec4f state, decimal_t u) {
+  Primitive1D(Vec4f state, decimal_t u)
+  {
     c << 0, u, state(3), state(2), state(1), state(0);
   }
 
   /// Construct 1D primitive from an initial state (p1) to a goal state (p2),
   /// given duration t
-  Primitive1D(decimal_t p1, decimal_t p2, decimal_t t) {
+  Primitive1D(decimal_t p1, decimal_t p2, decimal_t t)
+  {
     c << 0, 0, 0, 0, (p2 - p1) / t, p1;
   }
 
   /// Construct 1D primitive from an initial state (p1, v1) to a goal state (p2,
   /// v2), given duration t
   Primitive1D(decimal_t p1, decimal_t v1, decimal_t p2, decimal_t v2,
-              decimal_t t) {
+              decimal_t t)
+  {
     Mat4f A;
     A << 0, 0, 0, 1, 0, 0, 1, 0, power(t, 3) / 6, t * t / 2, t, 1, t * t / 2, t,
         1, 0;
@@ -71,7 +76,8 @@ class Primitive1D {
   /// Construct 1D primitive from an initial state (p1, v1, a1) to a goal state
   /// (p2, v2, a2), given duration t
   Primitive1D(decimal_t p1, decimal_t v1, decimal_t a1, decimal_t p2,
-              decimal_t v2, decimal_t a2, decimal_t t) {
+              decimal_t v2, decimal_t a2, decimal_t t)
+  {
     Mat6f A;
     A << 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
         power(t, 5) / 120, power(t, 4) / 24, power(t, 3) / 6, t * t / 2, t, 1,
@@ -89,7 +95,8 @@ class Primitive1D {
    * @param t assume the duration is from 0 to t
    * @param control effort is defined as \f$i\f$-th derivative of polynomial
    */
-  decimal_t J(decimal_t t, const Control::Control& control) const {
+  decimal_t J(decimal_t t, const Control::Control &control) const
+  {
     // i = 1, return integration of square of vel
     if (control == Control::VEL || control == Control::VELxYAW)
       return c(0) * c(0) / 5184 * power(t, 9) +
@@ -125,19 +132,22 @@ class Primitive1D {
   Vec6f coeff() const { return c; }
 
   /// Return \f$p\f$ at time \f$t\f$
-  decimal_t p(decimal_t t) const {
+  decimal_t p(decimal_t t) const
+  {
     return c(0) / 120 * power(t, 5) + c(1) / 24 * power(t, 4) +
            c(2) / 6 * power(t, 3) + c(3) / 2 * t * t + c(4) * t + c(5);
   }
 
   /// Return \f$v\f$ at time \f$t\f$
-  decimal_t v(decimal_t t) const {
+  decimal_t v(decimal_t t) const
+  {
     return c(0) / 24 * power(t, 4) + c(1) / 6 * power(t, 3) + c(2) / 2 * t * t +
            c(3) * t + c(4);
   }
 
   /// Return \f$a\f$ at time \f$t\f$
-  decimal_t a(decimal_t t) const {
+  decimal_t a(decimal_t t) const
+  {
     return c(0) / 6 * power(t, 3) + c(1) / 2 * t * t + c(2) * t + c(3);
   }
 
@@ -149,10 +159,12 @@ class Primitive1D {
    *
    * Velocities at both ends (0, t) are not considered
    */
-  std::vector<decimal_t> extrema_v(decimal_t t) const {
+  std::vector<decimal_t> extrema_v(decimal_t t) const
+  {
     std::vector<decimal_t> roots = solve(0, c(0) / 6, c(1) / 2, c(2), c(3));
     std::vector<decimal_t> ts;
-    for (const auto& it : roots) {
+    for (const auto &it : roots)
+    {
       if (it > 0 && it < t)
         ts.push_back(it);
       else if (it >= t)
@@ -166,10 +178,12 @@ class Primitive1D {
    *
    * Accelerations at both ends (0, t) are not considered
    */
-  std::vector<decimal_t> extrema_a(decimal_t t) const {
+  std::vector<decimal_t> extrema_a(decimal_t t) const
+  {
     std::vector<decimal_t> roots = solve(0, 0, c(0) / 2, c(1), c(2));
     std::vector<decimal_t> ts;
-    for (const auto& it : roots) {
+    for (const auto &it : roots)
+    {
       if (it > 0 && it < t)
         ts.push_back(it);
       else if (it >= t)
@@ -183,16 +197,19 @@ class Primitive1D {
    *
    * Jerks at both ends (0, t) are not considered
    */
-  std::vector<decimal_t> extrema_j(decimal_t t) const {
+  std::vector<decimal_t> extrema_j(decimal_t t) const
+  {
     std::vector<decimal_t> ts;
-    if (c(0) != 0) {
+    if (c(0) != 0)
+    {
       decimal_t t_sol = -c(1) * 2 / c(0);
-      if (t_sol > 0 && t_sol < t) ts.push_back(t_sol);
+      if (t_sol > 0 && t_sol < t)
+        ts.push_back(t_sol);
     }
     return ts;
   }
 
- public:
+public:
   /// Coefficients
   Vec6f c{Vec6f::Zero()};
 };
@@ -203,8 +220,9 @@ class Primitive1D {
  * Contains \f$n\f$ 1D primitives corresponding to each axis individually.
  */
 template <int Dim>
-class Primitive {
- public:
+class Primitive
+{
+public:
   /**
    * @brief Empty constructor
    */
@@ -217,41 +235,62 @@ class Primitive {
    * if the dimension of u is greater than p, use the additional value for yaw
    * control
    */
-  Primitive(const Waypoint<Dim>& p, const VecDf& u, decimal_t t)
-      : t_(t), control_(p.control) {
-    if (control_ == Control::SNP) {
-      for (int i = 0; i < Dim; i++) {
+  Primitive(const Waypoint<Dim> &p, const VecDf &u, decimal_t t)
+      : t_(t), control_(p.control)
+  {
+    if (control_ == Control::SNP)
+    {
+      for (int i = 0; i < Dim; i++)
+      {
         Vec4f vec;
         vec << p.pos(i), p.vel(i), p.acc(i), p.jrk(i);
         prs_[i] = Primitive1D(vec, u(i));
       }
-    } else if (control_ == Control::JRK) {
+    }
+    else if (control_ == Control::JRK)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(Vec3f(p.pos(i), p.vel(i), p.acc(i)), u(i));
-    } else if (control_ == Control::ACC) {
+    }
+    else if (control_ == Control::ACC)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(Vec2f(p.pos(i), p.vel(i)), u(i));
-    } else if (control_ == Control::VEL) {
-      for (int i = 0; i < Dim; i++) prs_[i] = Primitive1D(p.pos(i), u(i));
-    } else if (control_ == Control::SNPxYAW) {
-      for (int i = 0; i < Dim; i++) {
+    }
+    else if (control_ == Control::VEL)
+    {
+      for (int i = 0; i < Dim; i++)
+        prs_[i] = Primitive1D(p.pos(i), u(i));
+    }
+    else if (control_ == Control::SNPxYAW)
+    {
+      for (int i = 0; i < Dim; i++)
+      {
         Vec4f vec;
         vec << p.pos(i), p.vel(i), p.acc(i), p.jrk(i);
         prs_[i] = Primitive1D(vec, u(i));
       }
       pr_yaw_ = Primitive1D(p.yaw, u(Dim));
-    } else if (control_ == Control::JRKxYAW) {
+    }
+    else if (control_ == Control::JRKxYAW)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(Vec3f(p.pos(i), p.vel(i), p.acc(i)), u(i));
       pr_yaw_ = Primitive1D(p.yaw, u(Dim));
-    } else if (control_ == Control::ACCxYAW) {
+    }
+    else if (control_ == Control::ACCxYAW)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(Vec2f(p.pos(i), p.vel(i)), u(i));
       pr_yaw_ = Primitive1D(p.yaw, u(Dim));
-    } else if (control_ == Control::VELxYAW) {
-      for (int i = 0; i < Dim; i++) prs_[i] = Primitive1D(p.pos(i), u(i));
+    }
+    else if (control_ == Control::VELxYAW)
+    {
+      for (int i = 0; i < Dim; i++)
+        prs_[i] = Primitive1D(p.pos(i), u(i));
       pr_yaw_ = Primitive1D(p.yaw, u(Dim));
-    } else
+    }
+    else
       printf("Null Primitive, check the control set-up of the Waypoint!\n");
   }
 
@@ -259,39 +298,46 @@ class Primitive {
    * @brief Construct from an initial state p1 and a goal state p2 for a given
    * duration t
    */
-  Primitive(const Waypoint<Dim>& p1, const Waypoint<Dim>& p2, decimal_t t)
-      : t_(t), control_(p1.control) {
+  Primitive(const Waypoint<Dim> &p1, const Waypoint<Dim> &p2, decimal_t t)
+      : t_(t), control_(p1.control)
+  {
     // Use jrk control
-    if (p1.control == Control::JRK && p2.control == Control::JRK) {
+    if (p1.control == Control::JRK && p2.control == Control::JRK)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p1.vel(i), p1.acc(i), p2.pos(i),
                               p2.vel(i), p2.acc(i), t_);
     }
     // Use acc control
-    else if (p1.control == Control::ACC && p2.control == Control::ACC) {
+    else if (p1.control == Control::ACC && p2.control == Control::ACC)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p1.vel(i), p2.pos(i), p2.vel(i), t_);
     }
     // Use vel control
-    else if (p1.control == Control::VEL && p2.control == Control::VEL) {
+    else if (p1.control == Control::VEL && p2.control == Control::VEL)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p2.pos(i), t_);
     }
     // Use jrk & yaw control
-    else if (p1.control == Control::JRKxYAW && p2.control == Control::JRKxYAW) {
+    else if (p1.control == Control::JRKxYAW && p2.control == Control::JRKxYAW)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p1.vel(i), p1.acc(i), p2.pos(i),
                               p2.vel(i), p2.acc(i), t_);
       pr_yaw_ = Primitive1D(p1.yaw, p2.yaw, t_);
     }
     // Use acc & yaw control
-    else if (p1.control == Control::ACCxYAW && p2.control == Control::ACCxYAW) {
+    else if (p1.control == Control::ACCxYAW && p2.control == Control::ACCxYAW)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p1.vel(i), p2.pos(i), p2.vel(i), t_);
       pr_yaw_ = Primitive1D(p1.yaw, p2.yaw, t_);
     }
     // Use vel & yaw control
-    else if (p1.control == Control::VELxYAW && p2.control == Control::VELxYAW) {
+    else if (p1.control == Control::VELxYAW && p2.control == Control::VELxYAW)
+    {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p2.pos(i), t_);
       pr_yaw_ = Primitive1D(p1.yaw, p2.yaw, t_);
@@ -306,10 +352,13 @@ class Primitive {
    *
    * Note: flag `use_xxx` is not set in this constructor
    */
-  Primitive(const vec_E<Vec6f>& cs, decimal_t t, Control::Control control)
-      : t_(t), control_(control) {
-    for (int i = 0; i < Dim; i++) prs_[i] = Primitive1D(cs[i]);
-    if (cs.size() == Dim + 1) pr_yaw_ = Primitive1D(cs[Dim]);
+  Primitive(const vec_E<Vec6f> &cs, decimal_t t, Control::Control control)
+      : t_(t), control_(control)
+  {
+    for (int i = 0; i < Dim; i++)
+      prs_[i] = Primitive1D(cs[i]);
+    if (cs.size() == Dim + 1)
+      pr_yaw_ = Primitive1D(cs[Dim]);
   }
 
   /**
@@ -318,14 +367,17 @@ class Primitive {
    * Note: flag `use_xxx` is set in the return value and it is equal
    * to the first given Waypoint
    */
-  Waypoint<Dim> evaluate(decimal_t t) const {
+  Waypoint<Dim> evaluate(decimal_t t) const
+  {
     Waypoint<Dim> p(control_);
-    for (int k = 0; k < Dim; k++) {
+    for (int k = 0; k < Dim; k++)
+    {
       p.pos(k) = prs_[k].p(t);
       p.vel(k) = prs_[k].v(t);
       p.acc(k) = prs_[k].a(t);
       p.jrk(k) = prs_[k].j(t);
-      if (p.use_yaw) p.yaw = normalize_angle(pr_yaw_.p(t));
+      if (p.use_yaw)
+        p.yaw = normalize_angle(pr_yaw_.p(t));
     }
     return p;
   }
@@ -350,11 +402,14 @@ class Primitive {
    * @brief Return max velocity along one axis
    * @param k indicates the corresponding axis: 0-x, 1-y, 2-z
    */
-  decimal_t max_vel(int k) const {
+  decimal_t max_vel(int k) const
+  {
     std::vector<decimal_t> ts = prs_[k].extrema_v(t_);
     decimal_t max_v = std::max(std::abs(prs_[k].v(0)), std::abs(prs_[k].v(t_)));
-    for (const auto& it : ts) {
-      if (it > 0 && it < t_) {
+    for (const auto &it : ts)
+    {
+      if (it > 0 && it < t_)
+      {
         decimal_t v = std::abs(prs_[k].v(it));
         max_v = v > max_v ? v : max_v;
       }
@@ -366,11 +421,14 @@ class Primitive {
    * @brief Return max accleration along one axis
    * @param k indicates the corresponding axis: 0-x, 1-y, 2-z
    */
-  decimal_t max_acc(int k) const {
+  decimal_t max_acc(int k) const
+  {
     std::vector<decimal_t> ts = prs_[k].extrema_a(t_);
     decimal_t max_a = std::max(std::abs(prs_[k].a(0)), std::abs(prs_[k].a(t_)));
-    for (const auto& it : ts) {
-      if (it > 0 && it < t_) {
+    for (const auto &it : ts)
+    {
+      if (it > 0 && it < t_)
+      {
         decimal_t a = std::abs(prs_[k].a(it));
         max_a = a > max_a ? a : max_a;
       }
@@ -381,11 +439,14 @@ class Primitive {
   /**
    * @brief Return max jerk along k-th dimension
    */
-  decimal_t max_jrk(int k) const {
+  decimal_t max_jrk(int k) const
+  {
     std::vector<decimal_t> ts = prs_[k].extrema_j(t_);
     decimal_t max_j = std::max(std::abs(prs_[k].j(0)), std::abs(prs_[k].j(t_)));
-    for (const auto& it : ts) {
-      if (it > 0 && it < t_) {
+    for (const auto &it : ts)
+    {
+      if (it > 0 && it < t_)
+      {
         decimal_t j = std::abs(prs_[k].j(it));
         max_j = j > max_j ? j : max_j;
       }
@@ -400,9 +461,11 @@ class Primitive {
    * Return J is the summation of efforts in all three dimensions and
    * \f$J(i) = \int_0^t |p^{i}(t)|^2dt\f$
    */
-  decimal_t J(const Control::Control& control) const {
+  decimal_t J(const Control::Control &control) const
+  {
     decimal_t j = 0;
-    for (const auto& pr : prs_) j += pr.J(t_, control);
+    for (const auto &pr : prs_)
+      j += pr.J(t_, control);
     return j;
   }
 
@@ -412,10 +475,12 @@ class Primitive {
   /**
    * @brief Sample N+1 Waypoints using uniformed time
    */
-  vec_E<Waypoint<Dim>> sample(int N) const {
+  vec_E<Waypoint<Dim>> sample(int N) const
+  {
     vec_E<Waypoint<Dim>> ps(N + 1);
     decimal_t dt = t_ / N;
-    for (int i = 0; i <= N; i++) ps[i] = evaluate(i * dt);
+    for (int i = 0; i <= N; i++)
+      ps[i] = evaluate(i * dt);
     return ps;
   }
 
@@ -447,9 +512,10 @@ typedef Primitive<3> Primitive3D;
  * Use L1 norm for the maximum
  */
 template <int Dim>
-bool validate_primitive(const Primitive<Dim>& pr, decimal_t mv = 0,
+bool validate_primitive(const Primitive<Dim> &pr, decimal_t mv = 0,
                         decimal_t ma = 0, decimal_t mj = 0,
-                        decimal_t myaw = 0) {
+                        decimal_t myaw = 0)
+{
   if (pr.control() == Control::ACC)
     return validate_xxx(pr, mv, Control::VEL);
   else if (pr.control() == Control::JRK)
@@ -480,11 +546,14 @@ bool validate_primitive(const Primitive<Dim>& pr, decimal_t mv = 0,
  * Use L1 norm for the maximum
  */
 template <int Dim>
-bool validate_xxx(const Primitive<Dim>& pr, decimal_t max,
-                  Control::Control xxx) {
-  if (max <= 0) return true;
+bool validate_xxx(const Primitive<Dim> &pr, decimal_t max,
+                  Control::Control xxx)
+{
+  if (max <= 0)
+    return true;
   // check if max vel is violating the constraint
-  for (int i = 0; i < Dim; i++) {
+  for (int i = 0; i < Dim; i++)
+  {
     if (xxx == Control::VEL && pr.max_vel(i) > max)
       return false;
     else if (xxx == Control::ACC && pr.max_acc(i) > max)
@@ -501,16 +570,20 @@ bool validate_xxx(const Primitive<Dim>& pr, decimal_t max,
  *
  */
 template <int Dim>
-bool validate_yaw(const Primitive<Dim>& pr, decimal_t my) {
+bool validate_yaw(const Primitive<Dim> &pr, decimal_t my)
+{
   // ignore negative threshold
-  if (my <= 0) return true;
+  if (my <= 0)
+    return true;
   // check velocity angle at two ends, compare with my
   vec_E<Waypoint<Dim>> ws(2);
   ws[0] = pr.evaluate(0);
   ws[1] = pr.evaluate(pr.t());
-  for (const auto& w : ws) {
+  for (const auto &w : ws)
+  {
     const auto v = w.vel.template topRows<2>();
-    if (v(0) != 0 || v(1) != 0) {  // if v is not zero
+    if (v(0) != 0 || v(1) != 0)
+    { // if v is not zero
       /*
       decimal_t vyaw = std::atan2(v(1), v(0));
       decimal_t dyaw = normalize_angle(vyaw - w.yaw);
@@ -518,7 +591,8 @@ bool validate_yaw(const Primitive<Dim>& pr, decimal_t my) {
         return false;
         */
       decimal_t d = v.normalized().dot(Vec2f(cos(w.yaw), sin(w.yaw)));
-      if (d < cos(my)) return false;
+      if (d < cos(my))
+        return false;
     }
   }
   return true;
@@ -526,7 +600,8 @@ bool validate_yaw(const Primitive<Dim>& pr, decimal_t my) {
 
 /// Print all coefficients in primitive p
 template <int Dim>
-void print(const Primitive<Dim>& p) {
+void print(const Primitive<Dim> &p)
+{
   std::cout << "Primitive: " << std::endl;
   std::cout << "t: " << p.t() << std::endl;
   for (int i = 0; i < Dim; i++)
@@ -537,9 +612,11 @@ void print(const Primitive<Dim>& p) {
 
 /// Print max dynamic infomation in primitive p
 template <int Dim>
-void print_max(const Primitive<Dim>& p) {
+void print_max(const Primitive<Dim> &p)
+{
   Vecf<Dim> max_v, max_a, max_j;
-  for (int i = 0; i < Dim; i++) {
+  for (int i = 0; i < Dim; i++)
+  {
     max_v(i) = p.max_vel(i);
     max_a(i) = p.max_acc(i);
     max_j(i) = p.max_jrk(i);

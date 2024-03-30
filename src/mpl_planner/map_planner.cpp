@@ -3,57 +3,68 @@
 using namespace MPL;
 
 template <int Dim>
-MapPlanner<Dim>::MapPlanner(bool verbose) {
+MapPlanner<Dim>::MapPlanner(bool verbose)
+{
   this->planner_verbose_ = verbose;
   if (this->planner_verbose_)
-    printf(ANSI_COLOR_CYAN
-           "[MapPlanner] PLANNER VERBOSE ON\n" ANSI_COLOR_RESET);
+    printf(ANSI_COLOR_CYAN "[MapPlanner] PLANNER VERBOSE ON\n" ANSI_COLOR_RESET);
 }
 
 template <int Dim>
-void MapPlanner<Dim>::setMapUtil(
-    const std::shared_ptr<MapUtil<Dim>>& map_util) {
+void MapPlanner<Dim>::setMapUtil(const std::shared_ptr<MapUtil<Dim>> &map_util)
+{
   this->ENV_.reset(new MPL::env_map<Dim>(map_util));
   map_util_ = map_util;
 }
 
 template <int Dim>
-void MapPlanner<Dim>::setPotentialRadius(const Vecf<Dim>& radius) {
+void MapPlanner<Dim>::setPotentialRadius(const Vecf<Dim> &radius)
+{
   potential_radius_ = radius;
 }
 
 template <int Dim>
-void MapPlanner<Dim>::setPotentialMapRange(const Vecf<Dim>& range) {
+void MapPlanner<Dim>::setPotentialMapRange(const Vecf<Dim> &range)
+{
   potential_map_range_ = range;
 }
 
 template <int Dim>
-void MapPlanner<Dim>::setPotentialWeight(decimal_t w) {
+void MapPlanner<Dim>::setPotentialWeight(decimal_t w)
+{
   this->ENV_->set_potential_weight(w);
 }
 
 template <int Dim>
-void MapPlanner<Dim>::setGradientWeight(decimal_t w) {
+void MapPlanner<Dim>::setGradientWeight(decimal_t w)
+{
   this->ENV_->set_gradient_weight(w);
 }
 
 template <int Dim>
-void MapPlanner<Dim>::setSearchRadius(const Vecf<Dim>& search_radius) {
+void MapPlanner<Dim>::setSearchRadius(const Vecf<Dim> &search_radius)
+{
   search_radius_ = search_radius;
 }
 
 template <int Dim>
-void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim>& path, bool dense) {
+void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim> &path, bool dense)
+{
   // create cells along path
   vec_Veci<Dim> ps;
-  if (!dense) {
-    for (unsigned int i = 1; i < path.size(); i++) {
+  if (!dense)
+  {
+    for (unsigned int i = 1; i < path.size(); i++)
+    {
       auto pns = map_util_->rayTrace(path[i - 1], path[i]);
       ps.insert(ps.end(), pns.begin(), pns.end());
       ps.push_back(map_util_->floatToInt(path[i]));
     }
-  } else {
-    for (const auto& pt : path) ps.push_back(map_util_->floatToInt(pt));
+  }
+  else
+  {
+    for (const auto &pt : path)
+      ps.push_back(map_util_->floatToInt(pt));
   }
 
   // create mask
@@ -62,13 +73,18 @@ void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim>& path, bool dense) {
     rn(i) = std::ceil(search_radius_(i) / map_util_->getRes());
   vec_Veci<Dim> ns;
   Veci<Dim> n;
-  if (Dim == 2) {
-    for (n(0) = -rn(0); n(0) <= rn(0); n(0)++)
-      for (n(1) = -rn(1); n(1) <= rn(1); n(1)++) ns.push_back(n);
-  } else {
+  if (Dim == 2)
+  {
     for (n(0) = -rn(0); n(0) <= rn(0); n(0)++)
       for (n(1) = -rn(1); n(1) <= rn(1); n(1)++)
-        for (n(2) = -rn(2); n(2) <= rn(2); n(2)++) ns.push_back(n);
+        ns.push_back(n);
+  }
+  else
+  {
+    for (n(0) = -rn(0); n(0) <= rn(0); n(0)++)
+      for (n(1) = -rn(1); n(1) <= rn(1); n(1)++)
+        for (n(2) = -rn(2); n(2) <= rn(2); n(2)++)
+          ns.push_back(n);
   }
 
   // create in_region map
@@ -79,38 +95,52 @@ void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim>& path, bool dense) {
   else
     in_region.resize(dim(0) * dim(1) * dim(2), false);
 
-  for (const auto& it : ps) {
-    for (const auto& n : ns) {
+  for (const auto &it : ps)
+  {
+    for (const auto &n : ns)
+    {
       Veci<Dim> pn = it + n;
-      if (map_util_->isOutside(pn)) continue;
+      if (map_util_->isOutside(pn))
+        continue;
       int idx = map_util_->getIndex(pn);
-      if (!in_region[idx]) {
+      if (!in_region[idx])
+      {
         in_region[idx] = true;
       }
     }
   }
 
   this->ENV_->set_search_region(in_region);
-  if (this->planner_verbose_) printf("[MapPlanner] set search region\n");
+  if (this->planner_verbose_)
+    printf("[MapPlanner] set search region\n");
 }
 
 template <int Dim>
-vec_Vecf<Dim> MapPlanner<Dim>::getSearchRegion() const {
+vec_Vecf<Dim> MapPlanner<Dim>::getSearchRegion() const
+{
   const auto in_region = this->ENV_->get_search_region();
   vec_Vecf<Dim> pts;
   const auto dim = map_util_->getDim();
   Veci<Dim> n;
-  if (Dim == 2) {
-    for (n(0) = 0; n(0) < dim(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim(1); n(1)++) {
+  if (Dim == 2)
+  {
+    for (n(0) = 0; n(0) < dim(0); n(0)++)
+    {
+      for (n(1) = 0; n(1) < dim(1); n(1)++)
+      {
         if (in_region[map_util_->getIndex(n)])
           pts.push_back(map_util_->intToFloat(n));
       }
     }
-  } else {
-    for (n(0) = 0; n(0) < dim(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim(2); n(2)++) {
+  }
+  else
+  {
+    for (n(0) = 0; n(0) < dim(0); n(0)++)
+    {
+      for (n(1) = 0; n(1) < dim(1); n(1)++)
+      {
+        for (n(2) = 0; n(2) < dim(2); n(2)++)
+        {
           if (in_region[map_util_->getIndex(n)])
             pts.push_back(map_util_->intToFloat(n));
         }
@@ -122,13 +152,17 @@ vec_Vecf<Dim> MapPlanner<Dim>::getSearchRegion() const {
 }
 
 template <int Dim>
-vec_Vecf<Dim> MapPlanner<Dim>::getLinkedNodes() const {
+vec_Vecf<Dim> MapPlanner<Dim>::getLinkedNodes() const
+{
   lhm_.clear();
   vec_Vecf<Dim> linked_pts;
-  for (const auto& it : this->ss_ptr_->hm_) {
-    if (!it.second) continue;
+  for (const auto &it : this->ss_ptr_->hm_)
+  {
+    if (!it.second)
+      continue;
     // check pred array
-    for (unsigned int i = 0; i < it.second->pred_coord.size(); i++) {
+    for (unsigned int i = 0; i < it.second->pred_coord.size(); i++)
+    {
       auto key = it.second->pred_coord[i];
       Primitive<Dim> pr;
       this->ENV_->forward_action(this->ss_ptr_->hm_[key]->coord,
@@ -141,9 +175,11 @@ vec_Vecf<Dim> MapPlanner<Dim>::getLinkedNodes() const {
       int n = 1.0 * std::ceil(max_v * pr.t() / map_util_->getRes());
       int prev_id = -1;
       vec_E<Waypoint<Dim>> ws = pr.sample(n);
-      for (const auto& w : ws) {
+      for (const auto &w : ws)
+      {
         int id = map_util_->getIndex(map_util_->floatToInt(w.pos));
-        if (id != prev_id) {
+        if (id != prev_id)
+        {
           linked_pts.push_back(
               map_util_->intToFloat(map_util_->floatToInt(w.pos)));
           lhm_[id].push_back(std::make_pair(it.second->coord, i));
@@ -157,13 +193,17 @@ vec_Vecf<Dim> MapPlanner<Dim>::getLinkedNodes() const {
 }
 
 template <int Dim>
-void MapPlanner<Dim>::updateBlockedNodes(const vec_Veci<Dim>& blocked_pns) {
+void MapPlanner<Dim>::updateBlockedNodes(const vec_Veci<Dim> &blocked_pns)
+{
   std::vector<std::pair<Waypoint<Dim>, int>> blocked_nodes;
-  for (const auto& it : blocked_pns) {
+  for (const auto &it : blocked_pns)
+  {
     int id = map_util_->getIndex(it);
     auto search = lhm_.find(id);
-    if (search != lhm_.end()) {
-      for (const auto& node : lhm_[id]) blocked_nodes.push_back(node);
+    if (search != lhm_.end())
+    {
+      for (const auto &node : lhm_[id])
+        blocked_nodes.push_back(node);
     }
   }
 
@@ -171,13 +211,17 @@ void MapPlanner<Dim>::updateBlockedNodes(const vec_Veci<Dim>& blocked_pns) {
 }
 
 template <int Dim>
-void MapPlanner<Dim>::updateClearedNodes(const vec_Veci<Dim>& cleared_pns) {
+void MapPlanner<Dim>::updateClearedNodes(const vec_Veci<Dim> &cleared_pns)
+{
   std::vector<std::pair<Waypoint<Dim>, int>> cleared_nodes;
-  for (const auto& it : cleared_pns) {
+  for (const auto &it : cleared_pns)
+  {
     int id = map_util_->getIndex(it);
     auto search = lhm_.find(id);
-    if (search != lhm_.end()) {
-      for (const auto& node : lhm_[id]) cleared_nodes.push_back(node);
+    if (search != lhm_.end())
+    {
+      for (const auto &node : lhm_[id])
+        cleared_nodes.push_back(node);
     }
   }
 
@@ -185,30 +229,41 @@ void MapPlanner<Dim>::updateClearedNodes(const vec_Veci<Dim>& cleared_pns) {
 }
 
 template <int Dim>
-vec_Vec3f MapPlanner<Dim>::getPotentialCloud(decimal_t h_max) {
+vec_Vec3f MapPlanner<Dim>::getPotentialCloud(decimal_t h_max)
+{
   const auto data = map_util_->getMap();
   const auto dim = map_util_->getDim();
   const decimal_t ratio = h_max / H_MAX;
   vec_Vec3f ps;
 
   Veci<Dim> n;
-  if (Dim == 2) {
-    for (n(0) = 0; n(0) < dim(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim(1); n(1)++) {
+  if (Dim == 2)
+  {
+    for (n(0) = 0; n(0) < dim(0); n(0)++)
+    {
+      for (n(1) = 0; n(1) < dim(1); n(1)++)
+      {
         int idx = map_util_->getIndex(n);
-        if (data[idx] > 0) {
+        if (data[idx] > 0)
+        {
           decimal_t h = (decimal_t)data[idx] * ratio;
           Vecf<Dim> pt2d = map_util_->intToFloat(n);
           ps.push_back(Vec3f(pt2d(0), pt2d(1), h));
         }
       }
     }
-  } else {
-    for (n(0) = 0; n(0) < dim(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim(2); n(2)++) {
+  }
+  else
+  {
+    for (n(0) = 0; n(0) < dim(0); n(0)++)
+    {
+      for (n(1) = 0; n(1) < dim(1); n(1)++)
+      {
+        for (n(2) = 0; n(2) < dim(2); n(2)++)
+        {
           int idx = map_util_->getIndex(n);
-          if (data[idx] > 0) {
+          if (data[idx] > 0)
+          {
             auto pt = map_util_->intToFloat(n);
             Vec3f p;
             p << pt(0), pt(1), pt(2);
@@ -222,18 +277,24 @@ vec_Vec3f MapPlanner<Dim>::getPotentialCloud(decimal_t h_max) {
 }
 
 template <int Dim>
-vec_Vec3f MapPlanner<Dim>::getGradientCloud(decimal_t h_max, int i) {
+vec_Vec3f MapPlanner<Dim>::getGradientCloud(decimal_t h_max, int i)
+{
   const auto data = map_util_->getMap();
   const auto dim = map_util_->getDim();
   const decimal_t ratio = h_max / H_MAX;
   vec_Vec3f ps;
-  if (gradient_map_.empty()) return ps;
+  if (gradient_map_.empty())
+    return ps;
   Veci<Dim> n;
-  if (Dim == 2) {
-    for (n(0) = 0; n(0) < dim(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim(1); n(1)++) {
+  if (Dim == 2)
+  {
+    for (n(0) = 0; n(0) < dim(0); n(0)++)
+    {
+      for (n(1) = 0; n(1) < dim(1); n(1)++)
+      {
         int idx = map_util_->getIndex(n);
-        if (gradient_map_[idx].norm() > 0) {
+        if (gradient_map_[idx].norm() > 0)
+        {
           Vecf<Dim> pt2d = map_util_->intToFloat(n);
           ps.push_back(Vec3f(pt2d(0), pt2d(1), gradient_map_[idx](i) * ratio));
         }
@@ -244,8 +305,9 @@ vec_Vec3f MapPlanner<Dim>::getGradientCloud(decimal_t h_max, int i) {
 }
 
 template <int Dim>
-vec_E<Vecf<Dim>> MapPlanner<Dim>::calculateGradient(const Veci<Dim>& coord1,
-                                                    const Veci<Dim>& coord2) {
+vec_E<Vecf<Dim>> MapPlanner<Dim>::calculateGradient(const Veci<Dim> &coord1,
+                                                    const Veci<Dim> &coord2)
+{
   const auto dim = map_util_->getDim();
   const auto cmap = map_util_->getMap();
 
@@ -253,9 +315,12 @@ vec_E<Vecf<Dim>> MapPlanner<Dim>::calculateGradient(const Veci<Dim>& coord1,
 
   vec_E<Vecf<Dim>> g(dim(0) * dim(1), Vecf<Dim>::Zero());
   Veci<Dim> n = Veci<Dim>::Zero();
-  for (n(0) = coord1(0) - rn; n(0) < coord2(0) + rn; n(0)++) {
-    for (n(1) = coord1(1) - rn; n(1) < coord2(1) + rn; n(1)++) {
-      if (map_util_->isOutside(n)) continue;
+  for (n(0) = coord1(0) - rn; n(0) < coord2(0) + rn; n(0)++)
+  {
+    for (n(1) = coord1(1) - rn; n(1) < coord2(1) + rn; n(1)++)
+    {
+      if (map_util_->isOutside(n))
+        continue;
       int idx = map_util_->getIndex(n);
       auto nx1 = n;
       nx1(0) -= 1;
@@ -283,7 +348,8 @@ vec_E<Vecf<Dim>> MapPlanner<Dim>::calculateGradient(const Veci<Dim>& coord1,
 }
 
 template <int Dim>
-void MapPlanner<Dim>::createMask() {
+void MapPlanner<Dim>::createMask()
+{
   potential_mask_.clear();
   // create mask
   decimal_t res = map_util_->getRes();
@@ -292,27 +358,39 @@ void MapPlanner<Dim>::createMask() {
   // printf("rn: %d\n", rn);
   // printf("hn: %d\n", hn);
   Veci<Dim> n;
-  if (Dim == 2) {
-    for (n(0) = -rn; n(0) <= rn; n(0)++) {
-      for (n(1) = -rn; n(1) <= rn; n(1)++) {
-        if (std::hypot(n(0), n(1)) > rn) continue;
+  if (Dim == 2)
+  {
+    for (n(0) = -rn; n(0) <= rn; n(0)++)
+    {
+      for (n(1) = -rn; n(1) <= rn; n(1)++)
+      {
+        if (std::hypot(n(0), n(1)) > rn)
+          continue;
         decimal_t h =
             h_max *
             std::pow((1 - (decimal_t)std::hypot(n(0), n(1)) / rn), pow_);
-        if (h > 1e-3) potential_mask_.push_back(std::make_pair(n, (int8_t)h));
+        if (h > 1e-3)
+          potential_mask_.push_back(std::make_pair(n, (int8_t)h));
       }
     }
-  } else {
+  }
+  else
+  {
     int hn = std::ceil(potential_radius_(2) / res);
-    for (n(0) = -rn; n(0) <= rn; n(0)++) {
-      for (n(1) = -rn; n(1) <= rn; n(1)++) {
-        for (n(2) = -hn; n(2) <= hn; n(2)++) {
-          if (std::hypot(n(0), n(1)) > rn) continue;
+    for (n(0) = -rn; n(0) <= rn; n(0)++)
+    {
+      for (n(1) = -rn; n(1) <= rn; n(1)++)
+      {
+        for (n(2) = -hn; n(2) <= hn; n(2)++)
+        {
+          if (std::hypot(n(0), n(1)) > rn)
+            continue;
           decimal_t h =
               h_max * std::pow((1 - (decimal_t)std::hypot(n(0), n(1)) / rn) *
                                    (1 - (decimal_t)std::abs(n(2)) / hn),
                                pow_);
-          if (h > 1e-3) potential_mask_.push_back(std::make_pair(n, (int8_t)h));
+          if (h > 1e-3)
+            potential_mask_.push_back(std::make_pair(n, (int8_t)h));
         }
       }
     }
@@ -320,16 +398,19 @@ void MapPlanner<Dim>::createMask() {
 }
 
 template <int Dim>
-void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim>& pos) {
+void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim> &pos)
+{
   createMask();
   // compute a 2D local potential map
   const auto dim = map_util_->getDim();
   Veci<Dim> coord1 = Veci<Dim>::Zero();
   Veci<Dim> coord2 = dim;
-  if (potential_map_range_.norm() > 0) {
+  if (potential_map_range_.norm() > 0)
+  {
     coord1 = map_util_->floatToInt(pos - potential_map_range_);
     coord2 = map_util_->floatToInt(pos + potential_map_range_);
-    for (int i = 0; i < Dim; i++) {
+    for (int i = 0; i < Dim; i++)
+    {
       if (coord1(i) < 0)
         coord1(i) = 0;
       else if (coord1(i) >= dim(i))
@@ -346,16 +427,22 @@ void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim>& pos) {
   auto dmap = map;
 
   Veci<Dim> n;
-  if (Dim == 2) {
-    for (n(0) = coord1(0); n(0) < coord2(0); n(0)++) {
-      for (n(1) = coord1(1); n(1) < coord2(1); n(1)++) {
+  if (Dim == 2)
+  {
+    for (n(0) = coord1(0); n(0) < coord2(0); n(0)++)
+    {
+      for (n(1) = coord1(1); n(1) < coord2(1); n(1)++)
+      {
         int idx = map_util_->getIndex(n);
-        if (map[idx] > 0) {
+        if (map[idx] > 0)
+        {
           dmap[idx] = H_MAX;
-          for (const auto& it : potential_mask_) {
+          for (const auto &it : potential_mask_)
+          {
             const Veci<Dim> new_n = n + it.first;
 
-            if (!map_util_->isOutside(new_n)) {
+            if (!map_util_->isOutside(new_n))
+            {
               const int new_idx = map_util_->getIndex(new_n);
               dmap[new_idx] = std::max(dmap[new_idx], it.second);
             }
@@ -363,17 +450,25 @@ void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim>& pos) {
         }
       }
     }
-  } else {
-    for (n(0) = coord1(0); n(0) < coord2(0); n(0)++) {
-      for (n(1) = coord1(1); n(1) < coord2(1); n(1)++) {
-        for (n(2) = coord1(2); n(2) < coord2(2); n(2)++) {
+  }
+  else
+  {
+    for (n(0) = coord1(0); n(0) < coord2(0); n(0)++)
+    {
+      for (n(1) = coord1(1); n(1) < coord2(1); n(1)++)
+      {
+        for (n(2) = coord1(2); n(2) < coord2(2); n(2)++)
+        {
           int idx = map_util_->getIndex(n);
-          if (map[idx] > 0) {
+          if (map[idx] > 0)
+          {
             dmap[idx] = H_MAX;
-            for (const auto& it : potential_mask_) {
+            for (const auto &it : potential_mask_)
+            {
               const Veci<Dim> new_n = n + it.first;
 
-              if (!map_util_->isOutside(new_n)) {
+              if (!map_util_->isOutside(new_n))
+              {
                 const int new_idx = map_util_->getIndex(new_n);
                 dmap[new_idx] = std::max(dmap[new_idx], it.second);
               }
@@ -391,37 +486,44 @@ void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim>& pos) {
 }
 
 template <int Dim>
-bool MapPlanner<Dim>::iterativePlan(const Waypoint<Dim>& start,
-                                    const Waypoint<Dim>& goal,
-                                    const Trajectory<Dim>& raw_traj,
-                                    int max_num) {
+bool MapPlanner<Dim>::iterativePlan(const Waypoint<Dim> &start,
+                                    const Waypoint<Dim> &goal,
+                                    const Trajectory<Dim> &raw_traj,
+                                    int max_num)
+{
   bool verbose = this->planner_verbose_;
   this->planner_verbose_ = false;
   this->traj_ = raw_traj;
   double prev_traj_cost_ = 0;
 
   int cnt = 0;
-  while (cnt < max_num) {
+  while (cnt < max_num)
+  {
     cnt++;
     // Create a path from planned traj
     const auto ws = this->traj_.getWaypoints();
     vec_Vecf<Dim> path;
-    for (const auto& w : ws) path.push_back(w.pos);
+    for (const auto &w : ws)
+      path.push_back(w.pos);
     setSearchRegion(path, false);
 
-    if (!this->plan(start, goal)) {
-      if (verbose) printf("[MapPlanner] fails the [%d] plan!\n", cnt);
+    if (!this->plan(start, goal))
+    {
+      if (verbose)
+        printf("[MapPlanner] fails the [%d] plan!\n", cnt);
       this->planner_verbose_ = verbose;
       return false;
     }
 
-    if (prev_traj_cost_ == this->traj_cost_) {
+    if (prev_traj_cost_ == this->traj_cost_)
+    {
       if (verbose)
         printf(
             "[MapPlanner] Converged after %d iterations! Trajectory cost: %f\n",
             cnt, this->traj_cost_);
       break;
-    } else
+    }
+    else
       prev_traj_cost_ = this->traj_cost_;
   }
 

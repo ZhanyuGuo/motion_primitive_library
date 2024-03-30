@@ -18,15 +18,15 @@
  * n-th order polynomials
  */
 template <int Dim>
-class PolySolver {
- public:
+class PolySolver
+{
+public:
   /**
    * @brief Simple constructor
    * @param smooth_derivative_order The max derivative we want continuous
    * @param minimize_derivative The derivative to minimize
    */
-  PolySolver(unsigned int smooth_derivative_order,
-             unsigned int minimize_derivative, bool debug = false);
+  PolySolver(unsigned int smooth_derivative_order, unsigned int minimize_derivative, bool debug = false);
   /**
    * @brief Solve the trajector as defined in constructor
    * @param waypoints Intermediate waypoints that the trajectory pass through
@@ -34,13 +34,12 @@ class PolySolver {
    *
    * Note that the element in dts is the time for that segment
    */
-  bool solve(const vec_E<Waypoint<Dim>>& waypoints,
-             const std::vector<decimal_t>& dts);
+  bool solve(const vec_E<Waypoint<Dim>> &waypoints, const std::vector<decimal_t> &dts);
 
   /// Get the solved trajectory
   std::shared_ptr<PolyTraj<Dim>> getTrajectory();
 
- protected:
+protected:
   /// Number of coefficients of a polynomial
   unsigned int N_;
   /// Order of derivative to optimize

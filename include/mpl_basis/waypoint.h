@@ -20,7 +20,8 @@
  * anonymous union is used to set control flag.
  */
 template <int Dim>
-struct Waypoint {
+struct Waypoint
+{
   /// Empty constructor
   Waypoint() : control(Control::NONE) {}
   /**
@@ -29,12 +30,12 @@ struct Waypoint {
    */
   Waypoint(Control::Control c) : control(c) {}
 
-  Vecf<Dim> pos{Vecf<Dim>::Zero()};  ///< position in \f$R^{n}\f$
-  Vecf<Dim> vel{Vecf<Dim>::Zero()};  ///< velocity in \f$R^{n}\f$
-  Vecf<Dim> acc{Vecf<Dim>::Zero()};  ///< acceleration in \f$R^{n}\f$
-  Vecf<Dim> jrk{Vecf<Dim>::Zero()};  ///< jerk in \f$R^{n}\f$
-  decimal_t yaw{0};                  ///< yaw
-  decimal_t t{0};  ///< time when reaching this waypoint in graph search
+  Vecf<Dim> pos{Vecf<Dim>::Zero()}; ///< position in \f$R^{n}\f$
+  Vecf<Dim> vel{Vecf<Dim>::Zero()}; ///< velocity in \f$R^{n}\f$
+  Vecf<Dim> acc{Vecf<Dim>::Zero()}; ///< acceleration in \f$R^{n}\f$
+  Vecf<Dim> jrk{Vecf<Dim>::Zero()}; ///< jerk in \f$R^{n}\f$
+  decimal_t yaw{0};                 ///< yaw
+  decimal_t t{0};                   ///< time when reaching this waypoint in graph search
 
   /**
    * @brief Control flag
@@ -43,29 +44,38 @@ struct Waypoint {
    * each bit from right to left is assigned to `use_pos`, `use_vel`, `use_acc`,
    * `use_jrk` and `use_yaw`.
    */
-  union {
-    struct {
-      bool use_pos : 1;  ///< If true, pos will be used in primitive generation
-      bool use_vel : 1;  ///< If true, vel will be used in primitive generation
-      bool use_acc : 1;  ///< If true, acc will be used in primitive generation
-      bool use_jrk : 1;  ///< If true, jrk will be used in primitive generation
-      bool use_yaw : 1;  ///< If true, yaw will be used in primitive generation
+  union
+  {
+    struct
+    {
+      bool use_pos : 1; ///< If true, pos will be used in primitive generation
+      bool use_vel : 1; ///< If true, vel will be used in primitive generation
+      bool use_acc : 1; ///< If true, acc will be used in primitive generation
+      bool use_jrk : 1; ///< If true, jrk will be used in primitive generation
+      bool use_yaw : 1; ///< If true, yaw will be used in primitive generation
     };
-    Control::Control control : 5;  ///< Control value
+    Control::Control control : 5; ///< Control value
   };
 
-  bool enable_t{false};  ///< if enabled, use \f$t\f$ when calculating
-                         ///< hash_value
+  bool enable_t{false}; ///< if enabled, use \f$t\f$ when calculating hash_value
 
   /// Print all attributes
-  void print(std::string str = "") const {
-    if (!str.empty()) std::cout << str << std::endl;
-    if (use_pos) std::cout << "pos: " << pos.transpose() << std::endl;
-    if (use_vel) std::cout << "vel: " << vel.transpose() << std::endl;
-    if (use_acc) std::cout << "acc: " << acc.transpose() << std::endl;
-    if (use_jrk) std::cout << "jrk: " << jrk.transpose() << std::endl;
-    if (use_yaw) std::cout << "yaw: " << yaw << std::endl;
-    if (enable_t) std::cout << " t: " << t << std::endl;
+  void print(std::string str = "") const
+  {
+    if (!str.empty())
+      std::cout << str << std::endl;
+    if (use_pos)
+      std::cout << "pos: " << pos.transpose() << std::endl;
+    if (use_vel)
+      std::cout << "vel: " << vel.transpose() << std::endl;
+    if (use_acc)
+      std::cout << "acc: " << acc.transpose() << std::endl;
+    if (use_jrk)
+      std::cout << "jrk: " << jrk.transpose() << std::endl;
+    if (use_yaw)
+      std::cout << "yaw: " << yaw << std::endl;
+    if (enable_t)
+      std::cout << " t: " << t << std::endl;
 
     if (control == Control::VEL)
       std::cout << "use vel!" << std::endl;
@@ -90,33 +100,41 @@ struct Waypoint {
 
 /// Generate hash value for Waypoint class
 template <int Dim>
-std::size_t hash_value(const Waypoint<Dim>& key) {
+std::size_t hash_value(const Waypoint<Dim> &key)
+{
   std::size_t val = 0;
-  for (int i = 0; i < Dim; i++) {
-    if (key.use_pos) {
+  for (int i = 0; i < Dim; i++)
+  {
+    if (key.use_pos)
+    {
       int id = std::round(key.pos(i) / 0.01);
       boost::hash_combine(val, id);
     }
-    if (key.use_vel) {
+    if (key.use_vel)
+    {
       int id = std::round(key.vel(i) / 0.1);
       boost::hash_combine(val, id);
     }
-    if (key.use_acc) {
+    if (key.use_acc)
+    {
       int id = std::round(key.acc(i) / 0.1);
       boost::hash_combine(val, id);
     }
-    if (key.use_jrk) {
+    if (key.use_jrk)
+    {
       int id = std::round(key.jrk(i) / 0.1);
       boost::hash_combine(val, id);
     }
   }
 
-  if (key.use_yaw) {
+  if (key.use_yaw)
+  {
     int id = std::round(key.yaw / 0.1);
     boost::hash_combine(val, id);
   }
 
-  if (key.enable_t) {
+  if (key.enable_t)
+  {
     int id = std::round(key.t / 0.1);
     boost::hash_combine(val, id);
   }
@@ -130,13 +148,15 @@ std::size_t hash_value(const Waypoint<Dim>& key) {
  * using the hash value
  */
 template <int Dim>
-bool operator==(const Waypoint<Dim>& l, const Waypoint<Dim>& r) {
+bool operator==(const Waypoint<Dim> &l, const Waypoint<Dim> &r)
+{
   return hash_value(l) == hash_value(r);
 }
 
 /// Check if two waypoints are not equivalent
 template <int Dim>
-bool operator!=(const Waypoint<Dim>& l, const Waypoint<Dim>& r) {
+bool operator!=(const Waypoint<Dim> &l, const Waypoint<Dim> &r)
+{
   return hash_value(l) != hash_value(r);
 }
 

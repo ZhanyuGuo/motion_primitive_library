@@ -9,25 +9,26 @@
 
 /// Trajectory generator
 template <int Dim>
-class TrajSolver {
- public:
+class TrajSolver
+{
+public:
   /**
    * @brief Constructor
    * @param control define the control flag for start and end
    * @param yaw_control define the control flag for yaw start and end
    */
-  TrajSolver(Control::Control control,
-             Control::Control yaw_control = Control::VEL, bool debug = false)
-      : control_(control), yaw_control_(yaw_control) {
+  TrajSolver(Control::Control control, Control::Control yaw_control = Control::VEL, bool debug = false)
+      : control_(control), yaw_control_(yaw_control)
+  {
     if (control == Control::VEL || control == Control::VELxYAW)
       poly_solver_.reset(new PolySolver<Dim>(0, 1, debug));
     else if (control == Control::ACC || control == Control::ACCxYAW)
       poly_solver_.reset(new PolySolver<Dim>(1, 2, debug));
     else if (control == Control::JRK || control == Control::JRKxYAW)
       poly_solver_.reset(new PolySolver<Dim>(2, 3, debug));
-    // Due to dimension issue, only workd up to thrid order
-    // if(control == Control::SNP || control == Control::SNPxYAW)
-    // poly_solver_.reset(new PolySolver<Dim>(3, 4));
+    // // Due to dimension issue, only work up to thrid order
+    // else if (control == Control::SNP || control == Control::SNPxYAW)
+    //   poly_solver_.reset(new PolySolver<Dim>(3, 4));
     if (yaw_control == Control::VEL)
       yaw_solver_.reset(new PolySolver<1>(0, 1));
     else if (yaw_control == Control::ACC)
@@ -37,9 +38,11 @@ class TrajSolver {
   }
 
   /// Set Waypoint array directly, overwrite global vars
-  void setWaypoints(const vec_E<Waypoint<Dim>>& ws) {
+  void setWaypoints(const vec_E<Waypoint<Dim>> &ws)
+  {
     path_.resize(ws.size());
-    for (size_t i = 0; i < ws.size(); i++) path_[i] = ws[i].pos;
+    for (size_t i = 0; i < ws.size(); i++)
+      path_[i] = ws[i].pos;
     waypoints_ = ws;
   }
 
@@ -48,15 +51,17 @@ class TrajSolver {
 
   /// Set time allocation (optional), overwrite global dts, if not set, we will
   /// set a time allocation using L-inf
-  void setDts(const std::vector<decimal_t>& dts) { dts_ = dts; }
+  void setDts(const std::vector<decimal_t> &dts) { dts_ = dts; }
 
   /// Set Waypoint array from path, overwrite global vars, in this mode, the
   /// intermediate Waypoint are with `Control::VEL`
-  void setPath(const vec_Vecf<Dim>& path) {
+  void setPath(const vec_Vecf<Dim> &path)
+  {
     path_ = path;
 
     waypoints_.resize(path_.size());
-    for (size_t i = 0; i < waypoints_.size(); i++) {
+    for (size_t i = 0; i < waypoints_.size(); i++)
+    {
       waypoints_[i].pos = path[i];
       waypoints_[i].vel = Vecf<Dim>::Zero();
       waypoints_[i].acc = Vecf<Dim>::Zero();
@@ -70,22 +75,28 @@ class TrajSolver {
   }
 
   /// Solve for trajectory
-  Trajectory<Dim> solve(bool verbose = false) {
-    if (waypoints_.size() != dts_.size() + 1) dts_ = allocate_time(path_, v_);
+  Trajectory<Dim> solve(bool verbose = false)
+  {
+    if (waypoints_.size() != dts_.size() + 1)
+      dts_ = allocate_time(path_, v_);
 
-    if (verbose) {
-      for (const auto& it : dts_) std::cout << "dt: " << it << std::endl;
-      for (const auto& it : waypoints_) it.print();
+    if (verbose)
+    {
+      for (const auto &it : dts_)
+        std::cout << "dt: " << it << std::endl;
+      for (const auto &it : waypoints_)
+        it.print();
     }
 
-    if (poly_solver_ && yaw_solver_) {
+    if (poly_solver_ && yaw_solver_)
+    {
       // solve for pos
       poly_solver_->solve(waypoints_, dts_);
-      auto traj =
-          Trajectory<Dim>(poly_solver_->getTrajectory()->toPrimitives());
+      auto traj = Trajectory<Dim>(poly_solver_->getTrajectory()->toPrimitives());
       // solve for yaw
       vec_E<Waypoint<1>> yaws;
-      for (const auto& it : waypoints_) {
+      for (const auto &it : waypoints_)
+      {
         Waypoint<1> yaw(Control::VEL);
         yaw.pos(0) = it.yaw;
         yaw.vel(0) = 0;
@@ -100,10 +111,11 @@ class TrajSolver {
       for (size_t i = 0; i < traj.segs.size(); i++)
         traj.segs[i].pr_yaw_ = yaw_prs[i].prs_[0];
       return traj;
-    } else {
+    }
+    else
+    {
       if (verbose)
-        printf(ANSI_COLOR_RED
-               "TrajSolver is not initialized properlly!\n" ANSI_COLOR_RESET);
+        printf(ANSI_COLOR_RED "TrajSolver is not initialized properlly!\n" ANSI_COLOR_RESET);
       return Trajectory<Dim>();
     }
   }
@@ -117,12 +129,15 @@ class TrajSolver {
   /// Get the time allocation
   std::vector<decimal_t> getDts() const { return dts_; }
 
- private:
+private:
   /// Internal time allocation from path and vel using L-inf
-  std::vector<decimal_t> allocate_time(const vec_Vecf<Dim>& pts, decimal_t v) {
-    if (pts.size() < 2 || v <= 0) return std::vector<decimal_t>();
+  std::vector<decimal_t> allocate_time(const vec_Vecf<Dim> &pts, decimal_t v)
+  {
+    if (pts.size() < 2 || v <= 0)
+      return std::vector<decimal_t>();
     std::vector<decimal_t> dts(pts.size() - 1);
-    for (unsigned int i = 1; i < pts.size(); i++) {
+    for (unsigned int i = 1; i < pts.size(); i++)
+    {
       decimal_t d = (pts[i] - pts[i - 1]).template lpNorm<Eigen::Infinity>();
       dts[i - 1] = d / v;
     }
